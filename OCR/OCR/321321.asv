@@ -1,0 +1,17 @@
+image=imread('image.jpg');
+image=rgb2gray(image);
+m=size(image,1);
+r=size(image,2);
+t=size(image,3);
+
+    for b=0:r
+        for c=0:t
+            if (image(b,c)>=40)
+                image(b,c)=255;
+            else
+                x=1;
+            end
+        end
+    end
+image=gray2rgb(image);
+imshow(image)

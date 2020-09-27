@@ -1,0 +1,66 @@
+clc, close all, clear all % PROGRAMI ÇALIÞTIRMADAN ÖNCE ÇALIÞIR DURUMDAKÝ TÜM UYGULAMALARI VE PENCERELERÝ KAPATMAK VE AYRICA COMMAND WÝNDOWU TEMÝZLEMEK ÝÇÝN.
+a=videoinput('winvideo',1);
+start(a);
+preview(a);
+pause;
+a=getsnapshot(a);
+image=a;
+%image=imread('deneme2.jpg');
+image=rgb2gray(image);
+m=size(image,1);
+r=size(image,2);
+t=size(image,3);
+    for b=1:m
+        for c=1:r
+            if image(b,c)>=12
+                image(b,c)=255;
+            else
+                x=1;
+            end
+        end
+    end
+imshow(image); % INPUT RESMÝNÝ GÖSTERME.
+imagen=image;
+title('INPUT RESMI') % ÝNPUT RESMÝNE BAÞLIK KOYMA.
+%if size(imagen,3)==3 % RESMÝ BÝNAY YAPMAK ÝÇÝN ÖNCE RESMÝ GRAY KODA DÖNÜÞTÜRÜYORUZ.
+%   imagen=rgb2gray(imagen);
+%end
+threshold = graythresh(imagen); % TÜM RESMÝ BAZ ALARAK(ORTALAMA) MATLAB OTOMATÝK OLARAK THRESHOLD DEÐERÝ ATIYOR.
+imagen =~im2bw(imagen,threshold); % ÝNPUT RESMÝMÝZE UYGULUYORUZ. FAKAT NOT EQUAL OPERATORUNU KULLANIYORUZ CUNKU BÝZÝM TEMPLATESLERÝMÝZ SÝYAH ÜZERÝNE BEYAZ KARAKTERLER.
+imagen = bwareaopen(imagen,30);% 30-CONNECTED NEÝGHBORHOOD OLMAYANLARI RESÝMDEN ELÝYORUZ. SÝYAH(SIFIR) YAPIYORUZ.
+x=[0 1 1 1 0; 1 1 1 1 1; 0 1 1 1 0];
+y=[1 1 1 1;1 1 1 1;1 1 1 1];
+imagen=imdilate(imagen,x);
+imagen=imerode(imagen,y);
+word=[ ]; % text DOSYASINA YAZACAÐIMIZ KARAKTERLERÝ WORD STRÝNGÝNDE DEPOLAYACAÐIZ.
+re=imagen; % KOLAY YAZMAK ÝÇÝN KISALTIYORUZ.
+sonuc=[];
+toplam_puan=0;
+fid = fopen('text.txt', 'wt');
+load templates % BELÝNEN TEPMLATESLERÝ YÜKLEME.
+global templates % TEMPLATESLERÝ PROGRAM ÝÇERÝSÝNDE GLOBAL YAPMA.
+num_letras=size(templates,2); % 36 TANE KARAKTERÝMÝZ VAR(HARFLER VE RAKAMLAR OLMAK ÜZERE)
+while 1
+    [fl re]=lines(re); % LÝNES FONKSÝYONU
+    imgn=fl;
+    [L Ne] = bwlabel(imgn); % BURADA RESMÝN ÝÇÝNDEKÝ COMPONENTLERÝ(FARKLI KARAKTERLERÝ) TANIMLIYORUZ. "NE" KAÇ TANE KARAKTER OLDUÐUNU GÖSTERÝYOR.
+    for n=1:Ne
+        [r,c] = find(L==n); % MESELA n=2 ÝÇÝN BULDUÐU COMPONENT(KARAKTER) RC MATRÝXÝNÝ OLUÞTURUYOR. RC MATRÝXÝ ONUN YERÝNÝ BELÝRLÝYOR(LOCATÝON). 
+        n1=imgn(min(r):max(r),min(c):max(c)); % N1 COMPONENTÝ(KARAKTER) ÝÇÝN SOL ÜSTEN SAÐ ALTA KADAR SINIRLIYORUZ ONU, O COMPONENTÝ OLUÞTURAN YERLERÝ BELÝRTÝYOR. 
+        img_r=imresize(n1,[42 24]); % TEMPLATESLERÝMÝZ 42X24 PÝXEL OLDUKLARI ÝÇÝN, BULUNAN KARAKTERÝ YENÝDEN BOYUTLANDIRIYORUZ.
+        letter=read_letter(img_r,num_letras); % READ_LETTER FONKSÝYONU ÇAÐIRILIYOR.
+        word=[word letter]; % WORD MATRÝXÝ ÝÇERÝSÝNE BULUNAN KARAKTER YAZILIYOR. HER SEFERÝNDE BULUNAN KARAKTER SÝLÝNMEMESÝ ÝÇÝN BU FORMATTA TANIMLIYORUZ.     
+    end
+    kutuphane=textread('text1.txt','%s'); % TEXT1.TXT DOSYASINDAN SATIR SATIR STRING ÞEKLÝNDE ALIYORUZ DATA'YI.
+    a=strfind(kutuphane,word); %HANGÝ SATIRDA ÝSE ONU BULUYORUZ.
+    sonuc=[sonuc a]; % YAN YANA KELÝMELERÝNÝN KACINCI SATIRDA OLDUGUNU BELIRTIYOR.
+    fprintf(fid,'%s\n',word); % ÝLK SATIRDAKÝ TÜM KARAKTERLER TANIMLANIP WORD MATRÝXÝNE YAZILDIKTAN SONRA, ÝLK SATIRI TEXT DOSYASININ ÝLK SATIRINA YAZIYORUZ.
+    word=[ ]; % ÝKÝNCÝ SATIR ÝÇÝN , MATRÝSÝ BOÞALTIYORUZ.
+    if isempty(re) % EÐER RE BOÞSA LOOPTAN ÇIKIYORUZ.
+        break
+    end    
+end
+sonuc
+fclose(fid); % TEXT DOSYASINI KAPATIYORUZ.
+winopen('text.txt')
+clear all
